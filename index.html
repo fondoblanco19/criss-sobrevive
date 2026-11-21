@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Criss Sobrevive</title>
+<meta name="description" content="Historias animadas de supervivencia. ¿Tú habrías sobrevivido?">
+<meta property="og:title" content="Criss Sobrevive">
+<meta property="og:description" content="Historias animadas de supervivencia. ¿Tú habrías sobrevivido?">
+<meta property="og:image" content="perfil.webp">
+<link rel="icon" href="perfil.webp">
+<style>
+/* Una columna centrada: perfil, enlaces y comentarios del día. */
+/* Un solo aspecto nocturno: cielo oscuro, sol rojo detrás de la foto, ciudad en ruinas y brasas animadas en un canvas fijo. */
+:root {
+  --sky-top: #07080f;
+  --sky-low: #1a1220;
+  --sun: #e8321f;
+  --fg: #f3ede6;
+  --muted: #b2aab3;
+  --card: rgba(16, 15, 24, 0.72);
+  --line: rgba(255, 255, 255, 0.12);
+  --accent: #ff5a3c;
+  --accent-soft: rgba(255, 90, 60, 0.16);
+  --field: rgba(0, 0, 0, 0.35);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { background: var(--sky-top); }
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 50% 150px, rgba(232, 50, 31, 0.55) 0, rgba(232, 50, 31, 0.18) 160px, transparent 360px),
+    linear-gradient(180deg, var(--sky-top) 0%, var(--sky-low) 70%, #2a1418 100%) fixed;
+  color: var(--fg);
+  font: 15px/1.5 "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 48px;
+}
+#fx { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+main { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 32px; }
+.link, form, .c { -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.avatar { box-shadow: 0 0 0 6px rgba(232, 50, 31, 0.18), 0 0 60px rgba(232, 50, 31, 0.55); }
+h1 { text-shadow: 0 2px 18px rgba(0, 0, 0, 0.6); }
+header { text-align: center; }
+.avatar {
+  width: 120px; height: 120px; border-radius: 50%; object-fit: cover;
+  display: block; margin: 0 auto 16px; border: 3px solid var(--accent);
+}
+h1 { font-family: "Space Grotesk", "Inter", system-ui, sans-serif; font-size: 1.75rem; line-height: 1.15; margin: 0 0 8px; letter-spacing: -0.01em; }
+h2 { font-family: "Space Grotesk", "Inter", system-ui, sans-serif; font-size: 1.2rem; margin: 0; }
+.tag, .muted { margin: 0; color: var(--muted); }
+.links { display: flex; flex-direction: column; gap: 12px; }
+.link {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 16px 18px; border: 1px solid var(--line); border-radius: 12px;
+  background: var(--card); color: var(--fg); text-decoration: none;
+}
+.link:hover, .link:focus-visible { border-color: var(--accent); outline: none; }
+.link-name { font-weight: 600; }
+.link-handle { display: block; color: var(--muted); font-size: 0.85rem; overflow-wrap: anywhere; }
+.arrow { color: var(--accent); }
+.foot { text-align: center; color: var(--muted); font-size: 0.8rem; margin: 0; }
+
+.comments { display: flex; flex-direction: column; gap: 16px; }
+.comments-head { display: flex; flex-direction: column; gap: 4px; }
+form { display: flex; flex-direction: column; gap: 10px; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); }
+label { font-size: 0.8rem; font-weight: 600; letter-spacing: 0.02em; }
+input, textarea {
+  width: 100%; font: inherit; color: var(--fg); background: var(--field);
+  border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px;
+}
+textarea { min-height: 84px; resize: vertical; }
+input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.count { font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+button {
+  font: inherit; font-weight: 600; border: 0; border-radius: 8px; cursor: pointer;
+  padding: 10px 16px; background: var(--accent); color: #fff;
+}
+button:disabled { opacity: 0.5; cursor: default; }
+.status { font-size: 0.85rem; color: var(--muted); min-height: 1.2em; margin: 0; }
+.list { display: flex; flex-direction: column; gap: 10px; list-style: none; margin: 0; padding: 0; }
+.c { padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); display: flex; flex-direction: column; gap: 6px; }
+.c.top { border-color: var(--accent); background: var(--accent-soft); }
+.c-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.c-name { font-weight: 600; }
+.c-time { font-size: 0.8rem; color: var(--muted); }
+.badge { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
+.c-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.like {
+  align-self: flex-start; background: transparent; color: var(--fg);
+  border: 1px solid var(--line); padding: 4px 10px; font-weight: 500; font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+.like[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+.empty { padding: 20px; text-align: center; color: var(--muted); border: 1px dashed var(--line); border-radius: 12px; }
+</style>
+</head>
+<body>
+<canvas id="fx" aria-hidden="true"></canvas>
+<main>
+  <header>
+    <img class="avatar" src="perfil.webp" alt="Criss con su mochila y su gata Canela sobre una azotea, con una ciudad en ruinas al fondo">
+    <h1>Criss Sobrevive</h1>
+    <p class="tag">Historias animadas de supervivencia. ¿Tú habrías sobrevivido?</p>
+  </header>
+
+  <nav class="links" aria-label="Redes">
+    <a class="link" href="https://www.tiktok.com/@criss_sobrevive" target="_blank" rel="noopener">
+      <span><span class="link-name">TikTok</span><span class="link-handle">@criss_sobrevive</span></span>
+      <span class="arrow" aria-hidden="true">&rarr;</span>
+    </a>
+    <a class="link" href="https://www.youtube.com/@criss_Sobrevive" target="_blank" rel="noopener">
+      <span><span class="link-name">YouTube</span><span class="link-handle">@criss_Sobrevive</span></span>
+      <span class="arrow" aria-hidden="true">&rarr;</span>
+    </a>
+  </nav>
+
+  <section class="comments" aria-labelledby="ch">
+    <div class="comments-head">
+      <h2 id="ch">Comentarios del día</h2>
+      <p class="muted">Los comentarios duran 24 horas. Los que tienen más me gusta salen arriba.</p>
+    </div>
+
+    <form id="form">
+      <label for="nombre">Tu nombre</label>
+      <input id="nombre" maxlength="30" autocomplete="nickname" required>
+      <label for="texto">Comentario</label>
+      <textarea id="texto" maxlength="280" required></textarea>
+      <div class="row">
+        <span class="count" id="count">0 / 280</span>
+        <button type="submit" id="enviar">Publicar</button>
+      </div>
+      <p class="status" id="status" role="status"></p>
+    </form>
+
+    <ul class="list" id="list"></ul>
+  </section>
+
+  <p class="foot">Pronto: Instagram y Facebook.</p>
+</main>
+
+<script>
+// Fondo: silueta de ciudad en ruinas, brasas que suben y ceniza que cae.
+(function () {
+  const cv = document.getElementById("fx");
+  const ctx = cv.getContext("2d");
+  const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let w, h, dpr, city = [], parts = [];
+
+  function rand(a, b) { return a + Math.random() * (b - a); }
+
+  function buildCity() {
+    city = [];
+    for (const layer of [{ base: 0.16, top: 0.30, col: "#1b1220" }, { base: 0.08, top: 0.20, col: "#0c0a12" }]) {
+      const rows = [];
+      let x = -20;
+      while (x < w + 20) {
+        const bw = rand(30, 90);
+        const bh = h * rand(layer.base, layer.top);
+        const broken = Math.random() < 0.4;
+        rows.push({ x, bw, bh, broken, cut: rand(0.1, 0.4) });
+        x += bw + rand(2, 12);
+      }
+      city.push({ col: layer.col, rows });
+    }
+  }
+
+  function makePart(y) {
+    const ember = Math.random() < 0.55;
+    return {
+      ember, x: rand(0, w), y: y ?? rand(0, h),
+      r: ember ? rand(0.8, 2.2) : rand(0.6, 1.6),
+      vy: ember ? rand(-0.45, -0.15) : rand(0.15, 0.4),
+      vx: rand(-0.15, 0.15), t: rand(0, Math.PI * 2),
+    };
+  }
+
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    w = window.innerWidth; h = window.innerHeight;
+    cv.width = w * dpr; cv.height = h * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    buildCity();
+    const n = Math.round(Math.min(90, (w * h) / 14000));
+    parts = Array.from({ length: n }, () => makePart());
+  }
+
+  function drawCity() {
+    for (const layer of city) {
+      ctx.fillStyle = layer.col;
+      for (const b of layer.rows) {
+        const top = h - b.bh;
+        ctx.beginPath();
+        ctx.moveTo(b.x, h);
+        ctx.lineTo(b.x, top);
+        if (b.broken) {
+          ctx.lineTo(b.x + b.bw * 0.45, top);
+          ctx.lineTo(b.x + b.bw * 0.6, top + b.bh * b.cut);
+          ctx.lineTo(b.x + b.bw, top + b.bh * b.cut * 0.6);
+        } else {
+          ctx.lineTo(b.x + b.bw, top);
+        }
+        ctx.lineTo(b.x + b.bw, h);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+    const glow = ctx.createLinearGradient(0, h * 0.7, 0, h);
+    glow.addColorStop(0, "rgba(232,50,31,0)");
+    glow.addColorStop(1, "rgba(232,50,31,0.12)");
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, h * 0.7, w, h * 0.3);
+  }
+
+  function frame() {
+    ctx.clearRect(0, 0, w, h);
+    drawCity();
+    for (const p of parts) {
+      p.t += 0.02;
+      p.x += p.vx + Math.sin(p.t) * 0.2;
+      p.y += p.vy;
+      if (p.y < -10 || p.y > h + 10 || p.x < -10 || p.x > w + 10) {
+        Object.assign(p, makePart(p.ember ? h + 5 : -5));
+      }
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      if (p.ember) {
+        const a = 0.55 + Math.sin(p.t * 3) * 0.3;
+        ctx.fillStyle = `rgba(255,${Math.round(110 + Math.sin(p.t) * 40)},60,${a})`;
+        ctx.shadowColor = "rgba(255,90,40,0.9)";
+        ctx.shadowBlur = 8;
+      } else {
+        ctx.fillStyle = "rgba(200,195,205,0.35)";
+        ctx.shadowBlur = 0;
+      }
+      ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+    if (!still) requestAnimationFrame(frame);
+  }
+
+  resize();
+  window.addEventListener("resize", () => { resize(); if (still) frame(); });
+  frame();
+})();
+</script>
+
+<script type="module">
+// Pega aquí la configuración de tu proyecto de Firebase (Configuración del proyecto > Tus apps > Web).
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDZokvl__uya7S1z7IRu26XBzjxULyBBEU",
+  authDomain: "criss-sobrevive.firebaseapp.com",
+  projectId: "criss-sobrevive",
+  storageBucket: "criss-sobrevive.firebasestorage.app",
+  messagingSenderId: "931044370742",
+  appId: "1:931044370742:web:8be6be5ce7022e444a6b97",
+};
+
+const $ = (id) => document.getElementById(id);
+const list = $("list"), form = $("form"), status = $("status"), texto = $("texto");
+
+texto.addEventListener("input", () => { $("count").textContent = `${texto.value.length} / 280`; });
+
+function showEmpty(msg) {
+  list.innerHTML = "";
+  const li = document.createElement("li");
+  li.className = "empty";
+  li.textContent = msg;
+  list.append(li);
+}
+
+function readLiked() {
+  try { return new Set(JSON.parse(localStorage.getItem("liked") || "[]")); } catch { return new Set(); }
+}
+function saveLiked(set) {
+  try { localStorage.setItem("liked", JSON.stringify([...set])); } catch {}
+}
+
+function timeAgo(date) {
+  const min = Math.max(0, Math.round((Date.now() - date.getTime()) / 60000));
+  if (min < 1) return "ahora";
+  if (min < 60) return `hace ${min} min`;
+  return `hace ${Math.floor(min / 60)} h`;
+}
+
+if (!FIREBASE_CONFIG) {
+  showEmpty("Los comentarios se activan en cuanto el sitio esté conectado.");
+  $("enviar").disabled = true;
+} else {
+  const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
+  const fs = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+  const db = fs.getFirestore(initializeApp(FIREBASE_CONFIG));
+  const col = fs.collection(db, "comentarios");
+  const liked = readLiked();
+  let docs = [];
+
+  function render() {
+    const now = Date.now();
+    const vivos = docs.filter((d) => d.expira && d.expira.toMillis() > now);
+    if (!vivos.length) { showEmpty("Todavía no hay comentarios hoy. Escribe el primero."); return; }
+    vivos.sort((a, b) => (b.likes - a.likes) || (b.creadoMs - a.creadoMs));
+    const maxLikes = vivos[0].likes;
+    list.innerHTML = "";
+    for (const d of vivos) {
+      const li = document.createElement("li");
+      const top = maxLikes > 0 && d.likes === maxLikes;
+      li.className = "c" + (top ? " top" : "");
+      const head = document.createElement("div"); head.className = "c-head";
+      const name = document.createElement("span"); name.className = "c-name"; name.textContent = d.nombre;
+      const time = document.createElement("span"); time.className = "c-time"; time.textContent = timeAgo(new Date(d.creadoMs));
+      head.append(name, time);
+      if (top) { const b = document.createElement("span"); b.className = "badge"; b.textContent = "Destacado"; head.append(b); }
+      const p = document.createElement("p"); p.className = "c-text"; p.textContent = d.texto;
+      const btn = document.createElement("button");
+      btn.className = "like"; btn.type = "button";
+      const ya = liked.has(d.id);
+      btn.setAttribute("aria-pressed", String(ya));
+      btn.textContent = `♥ ${d.likes}`;
+      btn.disabled = ya;
+      btn.addEventListener("click", async () => {
+        btn.disabled = true;
+        try {
+          await fs.updateDoc(fs.doc(db, "comentarios", d.id), { likes: fs.increment(1) });
+          liked.add(d.id); saveLiked(liked);
+        } catch { btn.disabled = false; status.textContent = "No se pudo dar me gusta. Inténtalo otra vez."; }
+      });
+      li.append(head, p, btn);
+      list.append(li);
+    }
+  }
+
+  showEmpty("Cargando comentarios…");
+  const q = fs.query(col, fs.where("expira", ">", fs.Timestamp.now()));
+  fs.onSnapshot(q, (snap) => {
+    docs = snap.docs.map((s) => {
+      const v = s.data();
+      return { id: s.id, nombre: String(v.nombre || ""), texto: String(v.texto || ""), likes: Number(v.likes || 0),
+        expira: v.expira, creadoMs: v.creado ? v.creado.toMillis() : Date.now() };
+    });
+    render();
+  }, () => showEmpty("No se pudieron cargar los comentarios. Recarga la página."));
+  setInterval(render, 60000);
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const nombre = $("nombre").value.trim(), t = texto.value.trim();
+    if (!nombre || !t) { status.textContent = "Escribe tu nombre y un comentario."; return; }
+    $("enviar").disabled = true; status.textContent = "Publicando…";
+    try {
+      await fs.addDoc(col, {
+        nombre, texto: t, likes: 0,
+        creado: fs.serverTimestamp(),
+        expira: fs.Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000),
+      });
+      texto.value = ""; $("count").textContent = "0 / 280"; status.textContent = "Publicado.";
+    } catch { status.textContent = "No se pudo publicar. Revisa tu conexión e inténtalo otra vez."; }
+    $("enviar").disabled = false;
+  });
+}
+</script>
+</body>
+</html>

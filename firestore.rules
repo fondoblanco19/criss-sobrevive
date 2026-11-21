@@ -1,0 +1,25 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /comentarios/{id} {
+      allow read: if true;
+
+      allow create: if request.resource.data.keys().hasOnly(['nombre', 'texto', 'likes', 'creado', 'expira'])
+        && request.resource.data.nombre is string
+        && request.resource.data.nombre.size() > 0 && request.resource.data.nombre.size() <= 30
+        && request.resource.data.texto is string
+        && request.resource.data.texto.size() > 0 && request.resource.data.texto.size() <= 280
+        && request.resource.data.likes == 0
+        && request.resource.data.creado == request.time
+        && request.resource.data.expira is timestamp
+        && request.resource.data.expira > request.time
+        && request.resource.data.expira <= request.time + duration.value(25, 'h');
+
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes'])
+        && request.resource.data.likes == resource.data.likes + 1
+        && resource.data.expira > request.time;
+
+      allow delete: if false;
+    }
+  }
+}
